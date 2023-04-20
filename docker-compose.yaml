@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  nginx:
+    container_name: authenticator-nginx
+    build:
+      context: docker
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "8081:80"
+    volumes:
+      - ./:/var/www/authenticator
+    networks:
+      - authenticator-network
+    depends_on:
+      - php-fpm
+      - database
+
+  php-fpm:
+    container_name: authenticator-php-fpm
+    build:
+      context: docker
+      dockerfile: php-fpm/Dockerfile
+    working_dir: /var/www/authenticator
+    volumes:
+      - ./:/var/www/authenticator
+    networks:
+      - authenticator-network
+    depends_on:
+      - database
+
+  database:
+    container_name: authenticator-database
+    image: mysql:8.0.32
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: authenticator_db
+      MYSQL_USER: authenticator
+      MYSQL_PASSWORD: authenticator
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./docker/mysql/database:/var/lib/mysql
+      - ./docker/mysql/run/my.cnf:/etc/mysql/conf.d/my.cnf
+    networks:
+      - authenticator-network
+
+networks:
+  authenticator-network:
